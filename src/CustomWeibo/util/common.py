@@ -1,9 +1,15 @@
+# -*- coding: utf-8 -*-
 from weibo import  APIClient
 from CustomWeibo.settings import *
 import base64
 import hashlib
 import time
+import functools
 from CustomWeibo.models import Users
+from django.http import HttpResponse
+import json
+
+
 
 _COOKIE = 'authuser'
 _SALT = '12345'
@@ -35,3 +41,46 @@ def check_cookie(request):
         return u
     except BaseException:
         pass
+
+
+def _json_dumps(obj):
+    '''
+    Dumps any object as json string.
+
+    >>> class Person(object):
+    ...     def __init__(self, name):
+    ...         self.name = name
+    >>> _json_dumps([Person('Bob'), None])
+    '[{"name": "Bob"}, null]'
+    '''
+    def _dump_obj(obj):
+        if isinstance(obj, dict):
+            return obj
+        d = dict()
+        for k in dir(obj):
+            if not k.startswith('_'):
+                d[k] = getattr(obj, k)
+        return d
+    return json.dumps(obj, default=_dump_obj)
+
+def jsonresult(func):
+    '''
+    Autoconvert result to json str.
+
+    >>> @jsonresult
+    ... def hello(name):
+    ...     return dict(name=name)
+    >>> ctx.response = Response()
+    >>> hello('Bob')
+    '{"name": "Bob"}'
+    >>> ctx.response.header('CONTENT-TYPE')
+    'application/json; charset=utf-8'
+    >>> hello(None)
+    '{"name": null}'
+    '''
+    @functools.wraps(func)
+    def _wrapper(*args, **kw):
+        r = func(*args, **kw)
+        return HttpResponse(_json_dumps(r))
+    return _wrapper
+

@@ -17,4 +17,7 @@ urlpatterns = patterns('CustomWeibo.views',
     url(r'^$', 'index', name='home'),
     url(r'^callback/$','callback'),
     url(r'^signin/$','signin'),
+    url(r'^load/$','load'),
+    url(r'^friends/$','friends'),
+    url(r'^signout/$','signout'),
 )
